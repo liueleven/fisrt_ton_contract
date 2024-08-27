@@ -14,7 +14,7 @@ export default class Counter implements Contract {
     constructor(readonly address: Address, readonly init?: { code: Cell, data: Cell }) { }
 
 
-    // export default class Counter implements Contract {
+
 
     async sendDeploy(provider: ContractProvider, via: Sender) {
         await provider.internal(via, {
@@ -22,7 +22,22 @@ export default class Counter implements Contract {
             bounce: false
         });
     }
+    // 必须是 get 开头，get 不会花费 gas，写数据或者需要校验器的才需要 gas
+    async getCounter(provider: ContractProvider) {
+        const { stack } = await provider.get("counter", []);
+        return stack.readBigNumber();
+    }
+    // 发送消息一定是要 send 开头
+    async sendIncrement(provider: ContractProvider, via: Sender) {
+        const messageBody = beginCell()
+            .storeUint(1, 32) // op (op #1 = increment)
+            .storeUint(0, 64) // query id
+            .endCell();
+        await provider.internal(via, {
+            value: "0.002", // send 0.002 TON for gas
+            body: messageBody
+        });
+    }
 
-    // }
 }
 
